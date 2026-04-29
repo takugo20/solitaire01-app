@@ -56,7 +56,7 @@
     }
 
     .game {
-      width: min(960px, 100%);
+      width: min(980px, 100%);
       margin: 0 auto;
       padding: 12px;
     }
@@ -83,7 +83,7 @@
     .top-area,
     .tableau-area {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(7, minmax(0, 1fr));
       gap: 8px;
     }
 
@@ -94,9 +94,16 @@
     .slot,
     .pile {
       position: relative;
-      min-height: 112px;
+      width: 100%;
+      aspect-ratio: 5 / 7;
       border: 2px dashed rgba(255,255,255,0.35);
       border-radius: 12px;
+      min-width: 0;
+    }
+
+    .pile {
+      height: auto;
+      align-self: start;
     }
 
     .slot::before {
@@ -113,14 +120,15 @@
     }
 
     .gap {
-      min-height: 112px;
+      width: 100%;
+      aspect-ratio: 5 / 7;
     }
 
     .card {
       position: relative;
       z-index: 1;
       width: 100%;
-      height: 112px;
+      aspect-ratio: 5 / 7;
       border-radius: 12px;
       border: 1px solid rgba(0,0,0,0.25);
       background: #fff;
@@ -128,6 +136,7 @@
       box-shadow: 0 3px 8px rgba(0,0,0,0.35);
       cursor: pointer;
       overflow: hidden;
+      touch-action: manipulation;
     }
 
     .card.red {
@@ -139,7 +148,7 @@
       align-items: center;
       justify-content: center;
       color: #fff;
-      font-size: 28px;
+      font-size: clamp(18px, 3vw, 30px);
       background:
         linear-gradient(45deg, rgba(255,255,255,0.12) 25%, transparent 25%),
         linear-gradient(-45deg, rgba(255,255,255,0.12) 25%, transparent 25%),
@@ -158,7 +167,7 @@
       position: absolute;
       font-weight: 900;
       line-height: 1.05;
-      font-size: 18px;
+      font-size: clamp(11px, 2vw, 18px);
     }
 
     .card-top {
@@ -178,11 +187,16 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 34px;
+      font-size: clamp(22px, 4vw, 38px);
     }
 
+    /*
+      カードの縦横比は 5:7。
+      margin-top の % は横幅基準なので、
+      -95% にすると、カードの一部だけが見える重なりになります。
+    */
     .pile .card + .card {
-      margin-top: -72px;
+      margin-top: -95%;
     }
 
     .stock-empty {
@@ -191,9 +205,70 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 26px;
+      font-size: clamp(20px, 4vw, 34px);
       font-weight: 900;
       opacity: 0.75;
+    }
+
+    .clear-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.68);
+      backdrop-filter: blur(4px);
+    }
+
+    .clear-overlay.show {
+      display: flex;
+    }
+
+    .clear-box {
+      width: min(420px, 92vw);
+      padding: 28px 20px;
+      border-radius: 24px;
+      text-align: center;
+      color: #fff;
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,0.28), transparent 36%),
+        linear-gradient(135deg, #1d8f52, #074527);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      border: 2px solid rgba(255,255,255,0.35);
+      animation: popIn 0.35s ease-out;
+    }
+
+    .clear-title {
+      margin: 0 0 12px;
+      font-size: clamp(38px, 10vw, 64px);
+      line-height: 1;
+      color: #ffe66d;
+      text-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    }
+
+    .clear-text {
+      margin: 8px 0;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .clear-small {
+      margin: 16px 0 22px;
+      font-size: 15px;
+      opacity: 0.9;
+    }
+
+    @keyframes popIn {
+      from {
+        transform: scale(0.82);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
     }
 
     @media (max-width: 650px) {
@@ -217,25 +292,21 @@
       .slot,
       .pile,
       .gap {
-        min-height: 82px;
-      }
-
-      .card {
-        height: 82px;
         border-radius: 9px;
       }
 
-      .pile .card + .card {
-        margin-top: -52px;
+      .card {
+        border-radius: 9px;
       }
 
-      .card-top,
+      .card-top {
+        top: 4px;
+        left: 5px;
+      }
+
       .card-bottom {
-        font-size: 13px;
-      }
-
-      .card-center {
-        font-size: 25px;
+        right: 5px;
+        bottom: 4px;
       }
 
       .stats {
@@ -285,6 +356,16 @@
     </div>
   </main>
 
+  <div id="clearOverlay" class="clear-overlay">
+    <div class="clear-box">
+      <h2 class="clear-title">CLEAR!</h2>
+      <p class="clear-text">手数：<span id="finalMoves">0</span></p>
+      <p class="clear-text">時間：<span id="finalTime">00:00</span></p>
+      <p class="clear-small">おめでとうございます！</p>
+      <button id="overlayNewGameBtn">もう一度遊ぶ</button>
+    </div>
+  </div>
+
   <script>
     (() => {
       const SUITS = ["♠", "♥", "♦", "♣"];
@@ -296,6 +377,11 @@
       const movesEl = document.getElementById("moves");
       const timeEl = document.getElementById("time");
       const newGameBtn = document.getElementById("newGameBtn");
+
+      const clearOverlay = document.getElementById("clearOverlay");
+      const finalMovesEl = document.getElementById("finalMoves");
+      const finalTimeEl = document.getElementById("finalTime");
+      const overlayNewGameBtn = document.getElementById("overlayNewGameBtn");
 
       const foundationEls = [
         document.getElementById("foundation0"),
@@ -324,6 +410,7 @@
       let startTime = 0;
       let timerId = null;
       let gameWon = false;
+      let audioCtx = null;
 
       function createDeck() {
         const deck = [];
@@ -349,7 +436,105 @@
         }
       }
 
+      function unlockAudio() {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+      }
+
+      function playPaperSound() {
+        if (!audioCtx) return;
+
+        const duration = 0.055;
+        const sampleRate = audioCtx.sampleRate;
+        const bufferSize = Math.floor(sampleRate * duration);
+        const buffer = audioCtx.createBuffer(1, bufferSize, sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+          const fade = 1 - i / bufferSize;
+          data[i] = (Math.random() * 2 - 1) * fade;
+        }
+
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = "highpass";
+        filter.frequency.value = 900;
+
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.22, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        source.start();
+      }
+
+      function playSoftClick() {
+        if (!audioCtx) return;
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(260, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(180, audioCtx.currentTime + 0.04);
+
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+      }
+
+      function playFanfare() {
+        if (!audioCtx) return;
+
+        const notes = [
+          { freq: 523.25, time: 0.00, length: 0.16 },
+          { freq: 659.25, time: 0.17, length: 0.16 },
+          { freq: 783.99, time: 0.34, length: 0.18 },
+          { freq: 1046.5, time: 0.55, length: 0.38 },
+          { freq: 783.99, time: 0.95, length: 0.16 },
+          { freq: 1046.5, time: 1.12, length: 0.45 }
+        ];
+
+        for (const note of notes) {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          osc.type = "triangle";
+          osc.frequency.value = note.freq;
+
+          const start = audioCtx.currentTime + note.time;
+          const end = start + note.length;
+
+          gain.gain.setValueAtTime(0.001, start);
+          gain.gain.exponentialRampToValueAtTime(0.24, start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, end);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start(start);
+          osc.stop(end + 0.02);
+        }
+      }
+
       function startGame() {
+        unlockAudio();
+
         const deck = createDeck();
         shuffle(deck);
 
@@ -362,6 +547,7 @@
         moves = 0;
         gameWon = false;
         messageEl.textContent = "";
+        clearOverlay.classList.remove("show");
 
         clearInterval(timerId);
         startTime = Date.now();
@@ -397,14 +583,18 @@
         messageEl.textContent = text;
       }
 
-      function updateTime() {
-        if (!startTime) return;
+      function getTimeText() {
+        if (!startTime) return "00:00";
 
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         const min = String(Math.floor(elapsed / 60)).padStart(2, "0");
         const sec = String(elapsed % 60).padStart(2, "0");
 
-        timeEl.textContent = `${min}:${sec}`;
+        return `${min}:${sec}`;
+      }
+
+      function updateTime() {
+        timeEl.textContent = getTimeText();
       }
 
       function updateStats() {
@@ -517,11 +707,13 @@
 
         el.addEventListener("click", (e) => {
           e.stopPropagation();
+          unlockAudio();
           handleCardClick(source, pileIndex, cardIndex);
         });
 
         el.addEventListener("dblclick", (e) => {
           e.stopPropagation();
+          unlockAudio();
           autoMoveToFoundation(source, pileIndex, cardIndex);
         });
 
@@ -577,6 +769,7 @@
         if (canSelect(source, pileIndex, cardIndex)) {
           selected = { source, pileIndex, cardIndex };
           setMessage("");
+          playSoftClick();
           render();
         }
       }
@@ -625,6 +818,8 @@
       }
 
       function drawFromStock() {
+        unlockAudio();
+
         if (gameWon) return;
 
         selected = null;
@@ -635,6 +830,7 @@
           waste.push(card);
           addMove();
           setMessage("");
+          playPaperSound();
         } else if (waste.length > 0) {
           while (waste.length > 0) {
             const card = waste.pop();
@@ -643,7 +839,8 @@
           }
 
           addMove();
-          setMessage("山札を戻しました");
+          setMessage("");
+          playPaperSound();
         }
 
         render();
@@ -657,6 +854,7 @@
         pile[cardIndex].faceUp = true;
         addMove();
         setMessage("");
+        playPaperSound();
         render();
       }
 
@@ -726,6 +924,7 @@
         selected = null;
         addMove();
         setMessage("");
+        playPaperSound();
         render();
       }
 
@@ -773,6 +972,7 @@
         selected = null;
         addMove();
         setMessage("");
+        playPaperSound();
         render();
       }
 
@@ -813,11 +1013,17 @@
         if (total === 52) {
           gameWon = true;
           clearInterval(timerId);
-          setMessage("CLEAR! おめでとうございます！");
+
+          finalMovesEl.textContent = moves;
+          finalTimeEl.textContent = getTimeText();
+          clearOverlay.classList.add("show");
+
+          playFanfare();
         }
       }
 
       newGameBtn.addEventListener("click", startGame);
+      overlayNewGameBtn.addEventListener("click", startGame);
 
       startGame();
     })();
